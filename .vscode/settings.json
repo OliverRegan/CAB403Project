@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "generateplate.h": "c",
+        "hashtable.h": "c",
+        "shared_mem.h": "c",
+        "spawn_cars.h": "c"
+    }
+}
