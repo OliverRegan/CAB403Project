@@ -40,8 +40,11 @@ void *runEntryBG(void *arg)
 
     {
         pthread_mutex_lock(&shm->entrys[num].boomgate_mutex);
-        pthread_cond_wait(&shm->entrys[num].boomgate_cond, &shm->entrys[num].boomgate_mutex);
 
+         while (shm->entrys[num].boomgate == 'C' || shm->entrys[num].boomgate == 'O')
+        {
+            pthread_cond_wait(&shm->entrys[num].boomgate_cond, &shm->entrys[num].boomgate_mutex);
+        }
         // Boom Gate Rising.
         if (shm->entrys[num].boomgate == 'R')
         {
