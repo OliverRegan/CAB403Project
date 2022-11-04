@@ -1,0 +1,96 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/mman.h>
+#include <fcntl.h>
+#include <pthread.h>
+#include <stdbool.h>
+
+#include "resources/shared_mem.h"
+#include "resources/generatePlate.h"
+//#include "resources/test.h"
+
+// --------------------DEFINITIONS--------------------
+// Carpark format
+#define LEVELS  5   //Given from task - how many carpark levels there are
+#define ENTRANCES   5   //Given from task - how many entrances there are
+#define EXITS   5   //Given from task - how many exits there are
+
+int fd;
+parking_data_t *shm; // Initilize Shared Memory Segment
+
+
+// Function Help from https://qnaplus.com/c-program-to-sleep-in-milliseconds/ Author: Srikanta
+// Input microseconds
+int threadSleep(long tms)
+{
+    usleep(tms * 1000);
+    return 0;
+}
+
+// Read Shared Memory segment on startup.
+void *read_shared_memory(parking_data_t *shm)
+{
+
+    // Using share name, return already created Shared Memory Segment.
+    int open;
+    open = shm_open(SHARE_NAME, O_RDWR, 0666);
+
+    if (open < 0)
+    {
+        printf("Failed to create memory segment");
+    }
+    fd = open;
+
+    // Map memory segment to physical address
+    shm = mmap(NULL, SHMSZ, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+
+    if (shm == MAP_FAILED)
+    {
+        printf("FAILED TO MAP shared memory segment.\n");
+    }
+    printf("Created shared memory segment.\n");
+    printf("ADDRESS OF PARKING %p\n\n", shm);
+
+    return shm;
+}
+
+int main()
+{
+
+    parking_data_t parking; // Initilize parking segment
+
+    // Map Parking Segment to Memory and retrive address.
+    shm = read_shared_memory(&parking);
+
+    // USED TO DISPLAY STATUS
+    for (;;)
+    {
+
+        // Display Temperature
+        printf("\n");
+        for (int i = 0; i < LEVELS; ++i) {
+            if (i == LEVELS - 1) {
+                printf("| LEVEL %d TEMP: %d\n\n", i + 1, shm->levels[i].temp);
+            } else {
+                printf("| LEVEL %d TEMP: %d ", i + 1, shm->levels[i].temp);
+            }
+        }
+        
+        //PRINT ALARM
+        printf("| Alarm: %d\n\n", shm->levels[0].alarm);
+
+        threadSleep(50); // Updates Every 'x' amount of milliseconds
+        system("clear");
+    }
+
+    if ((munmap(shm, SHMSZ)) == -1)
+    {
+        perror("munmap failed");
+    }
+
+    close(fd);
+    return 0;
+}
