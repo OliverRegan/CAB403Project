@@ -14,7 +14,7 @@
 #include "resources/shared_mem.h"
 #include "resources/queue.h"
 #include "resources/generatePlate.h"
-#include "resources/hashTable.h"
+//#include "resources/hashTable.h"
 // --------------------DEFINITIONS--------------------
 // Carpark format
 #define LEVELS  5   //Given from task - how many carpark levels there are
@@ -35,10 +35,11 @@
 #define TEMP_COUNT 35
 
 #define SMOOTH_TEMPS 5
+#define MEDIAN_COUNT 30
 
 bool alarm_active = false;
 parking_data_t* shm;
-int fd;
+int shm_fd;
 
 void* temp_monitor(void* ptr) {
 	int thread = *((int*)ptr);
@@ -48,27 +49,30 @@ void* temp_monitor(void* ptr) {
 	/* Monitor Temperatures */
 	while(temperature != 0) {
 
-		int tempList[35];
-		int medianList[30];
+		//Initialise List
+		int temp_list[TEMP_COUNT];
+		int median_list[MEDIAN_COUNT];
+
+		//Initialise Variables
 		int count = 0;
-		int medianTemp;
+		int median_temp;
 		int fixedTempCount;
 		int iterations = 0;
 
 		/* Evaluate the first five temperatures before smoothing*/
 		for (int i = 0; i < LEVELS; i++) {
 			temperature = shm->levels[thread].temp;
-			tempList[i] = temperature;
+			temp_list[i] = temperature;
 		}
 
 		/* Evaluate temps 5-35 for smoothing*/
-		for (count = 5; count < 35; count++) {
+		for (count = 5; count < TEMP_COUNT; count++) {
 			temperature = shm->levels[thread].temp;
-			tempList[count] = temperature;
+			temp_list[count] = temperature;
 
 			int tempor_list[5];
 			for (int i = 0; i < 5; i++) {
-				tempor_list[i] = tempList[count - 5 + i];
+				tempor_list[i] = temp_list[count - 5 + i];
 			}
 
 			/* Sort temp list using selection sort */
@@ -84,24 +88,24 @@ void* temp_monitor(void* ptr) {
 						min_ix = jx;
 
 				// Swap the found minimum element with the first element
-				int temperature = tempList[min_ix];
+				int temperature = temp_list[min_ix];
 				tempor_list[min_ix] = tempor_list[ix];
 				tempor_list[ix] = temperature;
 			}
 
 			/* Find median */
-			medianTemp = tempor_list[2];
+			median_temp = tempor_list[2];
 			
 
-			medianList[iterations] = medianTemp;
+			median_list[iterations] = median_temp;
 			iterations++;
 		}
 		
 		/* Calculate fixed temperature fire detection */
 		fixedTempCount = 0;
-		for (int i = 0; i < 30; i++) {
-			//printf("median temp: %d \n", medianList[i]);
-			if (medianList[i] >= 58) {
+		for (int i = 0; i < MEDIAN_COUNT; i++) {
+
+			if (median_list[i] >= 58) {
 				fixedTempCount++;
 			}
 		}
@@ -111,7 +115,7 @@ void* temp_monitor(void* ptr) {
 		}
 
 		/* Calculate rate of rise fire detection */
-		if ((medianList[30] - medianList[0]) > 8) {
+		if ((median_list[MEDIAN_COUNT] - median_list[0]) > 8) {
 			alarm_active = true;
 		}
 
@@ -120,46 +124,20 @@ void* temp_monitor(void* ptr) {
 	return NULL;
 }
 
-void *create_shared_memory(parking_data_t *shm)
-{
-
-    // Check for previous memory segment.Remove if exits
-    shm_unlink(SHARE_NAME);
-
-    // Using share name and both creating and setting to read and write. Read and write for owner, group (0666). Fail if negative int is returned
-    int open;
-    open = shm_open(SHARE_NAME, O_CREAT | O_RDWR, 0666);
-
-    if (open < 0)
-    {
-        printf("Failed to create memory segment");
-    }
-    fd = open;
-
-    // Configure the size of the memory segment to 2920 bytes
-    if (ftruncate(fd, sizeof(parking_data_t)) == -1)
-    {
-        printf("Failed to set capacity of memory segment");
-    };
-
-    // Map memory segment to pysical address
-    shm = mmap(NULL, sizeof(parking_data_t), PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-
-    if (shm == MAP_FAILED)
-    {
-        printf("FAILED TO MAP shared memory segment.\n");
-    }
-    printf("Created shared memory segment.\n");
-    return shm;
-}
 
 int main()
 {
-    //Initialise Shared Memory
-    parking_data_t parking; // Initilize parking segment
-    
-    // Map Parking Segment to Memory and retrive address.
-    shm = create_shmory(&parking);
+	/* Locate shared memory segment and attach the segment to the data space*/
+	if ((shm_fd = shm_open(SHARE_NAME, O_RDWR, 0)) < 0)
+	{
+		perror("shm_open");
+		return 1;
+	}
+	if ((shm = (parking_data_t*)mmap(0, SHM_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0)) == (void*)-1)
+	{
+		perror("mmap");
+		return 1;
+	}
 
 	/* Create a thread for each level */
 	pthread_t threads[LEVELS];
@@ -205,6 +183,6 @@ int main()
 		usleep(1000);
 	}
 
-	munmap(shm, SHM_SIZE);
-	close(fd);
+	munmap(shm, 2920);
+	close(shm_fd);
 }
