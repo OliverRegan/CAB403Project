@@ -33,7 +33,7 @@ struct htable
 // Print car for testing
 void car_print(car_t *car)
 {
-    printf("plate=%s, Entry time:%s", car->plate, car->entry_time);
+    printf("plate=%s, Entry time:%ln", car->plate, car->entry_time);
 };
 
 // Initialize the hashtable
@@ -109,8 +109,6 @@ bool htable_add(htable_t *hashTable, char *plate)
         return false;
     }
 
-    printf("%s", plate);
-
     // Get bucket
     size_t bucket = htable_index(hashTable, plate);
     // Shuffle current head along
@@ -169,9 +167,12 @@ void htable_delete(htable_t *hashTable, char *plate)
     // Loop through until reach end of bucket
     while (current != NULL)
     {
+
         // Check to see if plates match
         if (strcmp(current->plate, plate) == 0)
         {
+            printf("Testing\n");
+
             // If car is first in list
             if (previous == NULL)
             {
@@ -229,8 +230,6 @@ void htable_search_value(htable_t *hashTable, char *search)
         for (car_t *bucket = hashTable->buckets[i]; bucket != NULL; bucket = bucket->next)
         {
             if (bucket->plate == search)
-                printf("%s ", bucket->plate);
         }
     }
-    printf("\n");
 }
