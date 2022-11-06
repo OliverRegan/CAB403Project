@@ -154,7 +154,7 @@ int main()
 	while(shm->levels[0].temp >= 0) {
 		//-- ACTIVE ALARM--
 		if (alarm_active) {
-			fprintf(stderr, "---- ACTIVE ALARM ----\n");
+			fprintf(stderr, "*** ALARM ACTIVE ***\n");
 
 			//Alarm system and boommgatees
 			for (int i = 0; i < LEVELS; i++) {
