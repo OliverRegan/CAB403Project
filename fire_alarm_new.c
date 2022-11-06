@@ -14,7 +14,7 @@
 #include "resources/shared_mem.h"
 #include "resources/queue.h"
 #include "resources/generatePlate.h"
-//#include "resources/hashTable.h"
+#include "resources/hashTable.h"
 // --------------------DEFINITIONS--------------------
 // Carpark format
 #define LEVELS  5   //Given from task - how many carpark levels there are
@@ -46,7 +46,7 @@ void* temp_monitor(void* ptr) {
 	int temperature;
 	temperature = shm->levels[thread].temp;
 
-	/* Monitor Temperatures */
+	// --TEMPERATURE MONITOR (VIA WHILE LOOP)--
 	while(temperature != 0) {
 
 		//Initialise List
@@ -59,23 +59,23 @@ void* temp_monitor(void* ptr) {
 		int fixedTempCount;
 		int iterations = 0;
 
-		/* Evaluate the first five temperatures before smoothing*/
+		//First five temps
 		for (int i = 0; i < LEVELS; i++) {
 			temperature = shm->levels[thread].temp;
 			temp_list[i] = temperature;
 		}
 
-		/* Evaluate temps 5-35 for smoothing*/
+		// Temps for smoothings
 		for (count = 5; count < TEMP_COUNT; count++) {
 			temperature = shm->levels[thread].temp;
 			temp_list[count] = temperature;
 
-			int tempor_list[5];
+			int tempor_list[5]; //Create temporary list
 			for (int i = 0; i < 5; i++) {
 				tempor_list[i] = temp_list[count - 5 + i];
 			}
 
-			/* Sort temp list using selection sort */
+			// Sort temps in ascending order (from tutorial)
 			int n = sizeof(tempor_list) / sizeof(tempor_list[0]);
 			int ix, jx, min_ix;
 
@@ -93,7 +93,7 @@ void* temp_monitor(void* ptr) {
 				tempor_list[ix] = temperature;
 			}
 
-			/* Find median */
+			// Find median temp
 			median_temp = tempor_list[2];
 			
 
@@ -101,20 +101,22 @@ void* temp_monitor(void* ptr) {
 			iterations++;
 		}
 		
-		/* Calculate fixed temperature fire detection */
+		//Calcualte fixed temp -> for fire detections
 		fixedTempCount = 0;
 		for (int i = 0; i < MEDIAN_COUNT; i++) {
 
-			if (median_list[i] >= 58) {
+			if (median_list[i] >= FIXED_TEMP) {
 				fixedTempCount++;
 			}
 		}
 
+        //--Fire detected via majority of temps over threshold--
+        // 27 = 90% of 30
 		if (fixedTempCount >= 27) {
 			alarm_active = true;
 		}
 
-		/* Calculate rate of rise fire detection */
+		//-- Fire detection via temp rise--
 		if ((median_list[MEDIAN_COUNT] - median_list[0]) > 8) {
 			alarm_active = true;
 		}
@@ -127,7 +129,7 @@ void* temp_monitor(void* ptr) {
 
 int main()
 {
-	/* Locate shared memory segment and attach the segment to the data space*/
+	//-- SHARED MEMORY--
 	if ((shm_fd = shm_open(SHARE_NAME, O_RDWR, 0)) < 0)
 	{
 		perror("shm_open");
@@ -139,7 +141,7 @@ int main()
 		return 1;
 	}
 
-	/* Create a thread for each level */
+	// -- CREATE THREADS FOR EACH LEVEL--
 	pthread_t threads[LEVELS];
 
 	int level[LEVELS];
@@ -152,7 +154,7 @@ int main()
 	while(shm->levels[0].temp >= 0) {
 		/* Activate Alarm */
 		if (alarm_active) {
-			fprintf(stderr, "*** ALARM ACTIVE ***\n");
+			fprintf(stderr, "---- ACTIVE ALARM ----\n");
 
 			/* Handle the alarm system and open boom gates
 			   Activate alarms on all levels */
