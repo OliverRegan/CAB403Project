@@ -152,19 +152,18 @@ int main()
 	}
 
 	while(shm->levels[0].temp >= 0) {
-		/* Activate Alarm */
+		//-- ACTIVE ALARM--
 		if (alarm_active) {
 			fprintf(stderr, "---- ACTIVE ALARM ----\n");
 
-			/* Handle the alarm system and open boom gates
-			   Activate alarms on all levels */
+			//Alarm system and boommgatees
 			for (int i = 0; i < LEVELS; i++) {
 				shm->levels[i].alarm = true;
 			}
 
-			/* Show evacuation message */
-			char* evacmessage = "EVACUATE ";
-			for (char* p = evacmessage; *p != '\0'; p++) {
+			//--Display on sign evacuation message--
+			char* evacuate_msg = "EVACUATE";
+			for (char* p = evacuate_msg; *p != '\0'; p++) {
 				for (int i = 0; i < LEVELS; i++) {
 					pthread_mutex_lock(&shm->entrys[i].info_mutex);
 
