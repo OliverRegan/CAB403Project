@@ -248,7 +248,7 @@ void *park_car(void *args)
 
     free(args);
 
-    // printf("\n\n\n\n\n%s\n\n\n\n\n", ((parking_thread_info_t *)args)->plate);
+    printf("\n\n\n\n\n%s\n\n\n\n\n", plate);
 
     pthread_mutex_lock(&parked_cars_mutex);
     // If not in parked cars, add it to parked cars after wait
@@ -325,13 +325,12 @@ void *park_car(void *args)
 
             // Enter the exit queue on the same level
             addToQueue(&exit_q[randLvl], plate);
-            printf("deleting");
+            printf("\n\n\ndeleting\n\n\n");
             // Remove from parked cars once in exit queue
             htable_delete(parked_cars, plate);
             htable_delete(plates_used, plate);
 
             // Free memory and exit thread
-            free(plate);
             free(lvlNum);
             fclose(plates);
 
@@ -366,7 +365,6 @@ void *remove_from_queue(void *args)
 {
 
     // Listen to boom gate cond
-
     // Get info from args
     queue *queues = ((thread_info_t *)args)->queues;
     parking_data_t *shm = ((thread_info_t *)args)->shm;
@@ -405,9 +403,7 @@ void *remove_from_queue(void *args)
         char *removed = malloc(sizeof(char) * 6);
 
         if (queues[num].count != 0)
-        {
-
-            // Lock queues mutex
+        { // Lock queues mutex
             if (type == 0)
             {
                 pthread_mutex_lock(&entry_queues_mutex);
@@ -553,7 +549,7 @@ void *spawn_cars(void *args)
         {
             // Get number plate to add
             char *numberPlate;
-            ;
+
             while (1)
             {
 
@@ -576,13 +572,15 @@ void *spawn_cars(void *args)
                     continue;
                 }
             }
-            pthread_mutex_lock(&entry_queues_mutex);
+            // pthread_mutex_lock(&entry_queues_mutex);
             // Time is at interval, span new car
             int thread_num = randomNumber() % 5;
+
             addToQueue(&q[thread_num], numberPlate);
-            // pthread_cond_signal(&shm->entrys[thread_num].LPR_cond);
+            pthread_cond_signal(&shm->entrys[thread_num].boomgate_cond);
+            pthread_cond_signal(&shm->exits[thread_num].boomgate_cond);
             counter = 0;
-            pthread_mutex_unlock(&entry_queues_mutex);
+            // pthread_mutex_unlock(&entry_queues_mutex);
         }
     }
     fclose(plates);
@@ -617,9 +615,9 @@ int main()
 
     threadSleep(10);
 
-    pthread_cond_signal(&shm->exits[2].boomgate_cond);
+    // pthread_cond_signal(&shm->exits[2].boomgate_cond);
 
-    pthread_join(spawn_car_thread, NULL);
+    // pthread_join(spawn_car_thread, NULL);
 
     // Generate Random Temperature
     // Helper Function from https://stackoverflow.com/questions/29381843/generate-random-number-in-range-min-max

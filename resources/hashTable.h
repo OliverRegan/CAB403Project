@@ -109,6 +109,8 @@ bool htable_add(htable_t *hashTable, char *plate)
         return false;
     }
 
+    // printf("%s", plate);
+
     // Get bucket
     size_t bucket = htable_index(hashTable, plate);
     // Shuffle current head along
@@ -154,8 +156,10 @@ void htable_print(htable_t *hashTable)
 // Delete item from hashtable
 // PRE: htabl_find(hashTable, key) != NULL
 // POST: htabl_find(hashTable, key) == NULL
-void htable_delete(htable_t *hashTable, char *plate)
+void htable_delete(htable_t *hashTable, char *plateInput)
 {
+    char *plate = plateInput;
+
     pthread_mutex_lock(&htable_mutex);
     // Init variables for head of bucket, current and previous for looping through table
     car_t *head = htable_bucket(hashTable, plate);
@@ -167,11 +171,12 @@ void htable_delete(htable_t *hashTable, char *plate)
     // Loop through until reach end of bucket
     while (current != NULL)
     {
+        printf("\n\n%s\n%s\n\n", current->plate, plate);
 
         // Check to see if plates match
-        if (strcmp(current->plate, plate) == 0)
+        if (strcmp(current->plate, plate))
         {
-            printf("Testing\n");
+            // printf("\n\n%s\n", plate);
 
             // If car is first in list
             if (previous == NULL)
@@ -185,8 +190,7 @@ void htable_delete(htable_t *hashTable, char *plate)
 
             // Free allocated memory
             free(current);
-            free(current->plate);
-            free(current->entry_time);
+
             break;
         }
 
@@ -220,16 +224,18 @@ void htable_destory(htable_t *hashTable)
     hashTable->size = 0;
 }
 
-// Iterates through each bucket of hashtable 'h', printing out keys with value 'search'
-// pre: htab_init(h)
-// post: each key with value 'search' has been printed to stdout
-void htable_search_value(htable_t *hashTable, char *search)
-{
-    for (size_t i = 0; i < hashTable->size; ++i)
-    {
-        for (car_t *bucket = hashTable->buckets[i]; bucket != NULL; bucket = bucket->next)
-        {
-            if (bucket->plate == search)
-        }
-    }
-}
+// // Iterates through each bucket of hashtable 'h', printing out keys with value 'search'
+// // pre: htab_init(h)
+// // post: each key with value 'search' has been printed to stdout
+// void htable_search_value(htable_t *hashTable, char *search)
+// {
+//     for (size_t i = 0; i < hashTable->size; ++i)
+//     {
+//         for (car_t *bucket = hashTable->buckets[i]; bucket != NULL; bucket = bucket->next)
+//         {
+//             if (bucket->plate == search){
+
+//             }
+//         }
+//     }
+// }
