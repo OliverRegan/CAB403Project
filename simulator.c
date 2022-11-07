@@ -18,7 +18,7 @@
 
 int fd;
 parking_data_t *shm; // Initilize Shared Memory Segment
-//size_t parking[Num_Of_Level];
+// size_t parking[Num_Of_Level];
 
 // Mutex for queues
 pthread_mutex_t queues_mutex;
@@ -286,7 +286,7 @@ void *spawn_cars(void *args)
         // pthread_join(bg_listener_thread, NULL);
     }
 
-    //parking_data_t *shm = args;
+    // parking_data_t *shm = args;
 
     // Init plates hash table for keeping track of allocated plates
     htable_t *plates_used = (htable_t *)malloc(sizeof(htable_t));
@@ -297,28 +297,27 @@ void *spawn_cars(void *args)
     while (1)
     {
         // Need to generate new car at random queue every 1-100ms
-        int interval = (randomNumber()%100)+1;
+        int interval = (randomNumber() % 100) + 1;
         int counter = 0;
         // Sleep for millisecond (Keeps thread asleep majority of the time)
         // Increase counter
         counter++;
-				
+
         // Test to see if counter is at interval
         if (counter == interval)
         {
             // Get number plate to add
-            char *numberPlate=(char*)calloc(6,sizeof(char));
-            
+            char *numberPlate = (char *)calloc(6, sizeof(char));
+
             while (1)
             {
-				while(!(has_room(plates_used))){
-					sleep(1);
-					system("clear");
+                while (!(has_room(plates_used)))
+                {
+                    sleep(1);
+                    system("clear");
                     htable_print(plates_used);
-                    
-                    }
-				
-				
+                }
+
                 numberPlate = generateNumberPlate();
 
                 if (htable_find(plates_used, numberPlate) == NULL)
@@ -354,28 +353,25 @@ void *spawn_cars(void *args)
 void *temp_sensor(void *arg)
 {
     int count = 0;
-    for(;;)
+    for (;;)
     {
         if (count < 500)
         {
-            for(int i = 0; i < Num_Of_Level; i++)
+            for (int i = 0; i < Num_Of_Level; i++)
                 shm->levels[i].temp = (short)((rand() % 10) + 20);
 
             usleep(((rand() % 5) + 20) * 2000);
         }
         else
         {
-            for(int i = 0; i < Num_Of_Level; i++)
+            for (int i = 0; i < Num_Of_Level; i++)
                 shm->levels[i].temp = (short)((rand() % 10) + 58);
 
             usleep(((rand() % 5) + 20) * 2000);
-            
         }
         count++;
     }
 }
-
-	
 
 int main()
 {
@@ -385,15 +381,15 @@ int main()
     // Create thread for adding cars to queues
     pthread_t spawn_car_thread;
 
-     //Create thread for temperature sensor
+    // Create thread for temperature sensor
     pthread_t temp_sensor_thread;
 
     // Map Parking Segment to Memory and retrive address.
     shm = create_shared_memory(&parking);
-	
+
     // Initialise Mutex/Condition Variables and Set Default Values for Shared Memory
     setDefaultValues(shm);
-    
+
     // Create thread for each entry
     pthread_create(&spawn_car_thread, NULL, spawn_cars, shm);
 
@@ -403,16 +399,16 @@ int main()
 
     // Initialise temp sensor threads
     pthread_create(&temp_sensor_thread, NULL, temp_sensor, NULL);
-	
-	srand(time(0));
 
-    //INitialise conditions
-    for (int i = 0; i < Num_Of_Level; ++i) {
+    srand(time(0));
+
+    // INitialise conditions
+    for (int i = 0; i < Num_Of_Level; ++i)
+    {
         shm->levels[i].temp = 1;
         shm->levels[i].alarm = false;
     };
 
-	
     pthread_join(spawn_car_thread, NULL);
     // Clean Up Threads and Shared Memory Mapping
     for (int i = 0; i < Num_Of_Entries + Num_Of_Exits; i++)
@@ -423,7 +419,7 @@ int main()
     {
         perror("munmap failed");
     }
-	
+
     close(fd);
 
     return 0;

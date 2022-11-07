@@ -40,22 +40,24 @@ void *display_sign(void *arg)
     {
         // Display Entrances
         printf("----------------ENTRANCES--------------\n");
-        printf("LEVEL 1 LPR: %s     |     BG: %c   | 	Status: %c\n", shm->entrys[0].lpr, shm->entrys[0].boomgate, shm->entrys[0].display);
-        printf("LEVEL 2 LPR: %s     |     BG: %c   | 	Status: %c\n", shm->entrys[1].lpr, shm->entrys[1].boomgate, shm->entrys[1].display);
-        printf("LEVEL 3 LPR: %s     |     BG: %c   | 	Status: %c\n", shm->entrys[2].lpr, shm->entrys[2].boomgate, shm->entrys[2].display);
-        printf("LEVEL 4 LPR: %s     |     BG: %c   | 	Status: %c\n", shm->entrys[3].lpr, shm->entrys[3].boomgate, shm->entrys[3].display);
-        printf("LEVEL 5 LPR: %s     |     BG: %c   | 	Status: %c\n", shm->entrys[4].lpr, shm->entrys[4].boomgate, shm->entrys[4].display);
+        printf("LEVEL 1 LPR: %.6s       \nBG: %c  | Display: %c\n", shm->entrys[0].lpr, shm->entrys[0].boomgate, shm->entrys[0].display);
+        printf("\nLEVEL 2 LPR: %.6s     \nBG: %c  | Display: %c\n", shm->entrys[1].lpr, shm->entrys[1].boomgate, shm->entrys[1].display);
+        printf("\nLEVEL 3 LPR: %.6s     \nBG: %c  | Display: %c\n", shm->entrys[2].lpr, shm->entrys[2].boomgate, shm->entrys[2].display);
+        printf("\nLEVEL 4 LPR: %.6s     \nBG: %c  | Display: %c\n", shm->entrys[3].lpr, shm->entrys[3].boomgate, shm->entrys[3].display);
+        printf("\nLEVEL 5 LPR: %.6s     \nBG: %c  | Display: %c\n", shm->entrys[4].lpr, shm->entrys[4].boomgate, shm->entrys[4].display);
 
         // Display Exits
-        printf("------------------EXITS----------------\n");
-        printf("LEVEL 1 LPR: %s     |     BG: %c\n", shm->exits[0].lpr, shm->exits[0].boomgate);
-        printf("LEVEL 2 LPR: %s     |     BG: %c\n", shm->exits[1].lpr, shm->exits[1].boomgate);
-        printf("LEVEL 3 LPR: %s     |     BG: %c\n", shm->exits[2].lpr, shm->exits[2].boomgate);
-        printf("LEVEL 4 LPR: %s     |     BG: %c\n", shm->exits[3].lpr, shm->exits[3].boomgate);
-        printf("LEVEL 5 LPR: %s     |     BG: %c\n", shm->exits[4].lpr, shm->exits[4].boomgate);
+        // Display Entrances
+        printf("----------------EXITS--------------\n");
+        printf("LEVEL 1 LPR: %.6s      \nBG: %c  |\n", shm->exits[0].lpr, shm->exits[0].boomgate);
+        printf("\nLEVEL 2 LPR: %.6s    \nBG: %c  |\n", shm->exits[1].lpr, shm->exits[1].boomgate);
+        printf("\nLEVEL 3 LPR: %.6s    \nBG: %c  |\n", shm->exits[2].lpr, shm->exits[2].boomgate);
+        printf("\nLEVEL 4 LPR: %.6s    \nBG: %c  |\n", shm->exits[3].lpr, shm->exits[3].boomgate);
+        printf("\nLEVEL 5 LPR: %.6s    \nBG: %c  |\n", shm->exits[4].lpr, shm->exits[4].boomgate);
+
 
         // Display Temperature
-        printf("\n");
+        printf("\n---------TEMPERATURE DISPLAY---------\n");
         for (int i = 0; i < Num_Of_Level; ++i)
         {
             if (i == Num_Of_Level - 1)
@@ -69,7 +71,7 @@ void *display_sign(void *arg)
         }
 
         // PRINT ALARM
-        printf("| Alarm: %d\n\n", shm->levels[0].alarm);
+        printf("| Alarm Status: %d\n\n", shm->levels[0].alarm);
         threadSleep(50); // Updates Every 'x' amount of milliseconds
         system("clear");
     }
@@ -111,7 +113,7 @@ void *addToHash(void *hashpointer)
     pthread_mutex_lock(&numMutex);
     int a = add;
     add++;
-    char *balls = (char *)malloc(6 * sizeof(char));
+    char *plate = (char *)malloc(6 * sizeof(char));
     pthread_mutex_unlock(&numMutex);
     while (has_room(hash))
     {
@@ -142,18 +144,18 @@ void *addToHash(void *hashpointer)
         shm->entrys[a].boomgate = 'C';
         threadSleep(1000);
 
-        balls = generateNumberPlate();
-        if (check_plate(balls))
+        plate = generateNumberPlate();
+        if (check_plate(plate))
         {
-            strncpy(shm->exits[a].lpr, balls, 6);
+            strncpy(shm->exits[a].lpr, plate, 6);
             threadSleep(1000);
             *shm->exits[a].lpr = 0;
-            htable_delete(hash, balls);
+            htable_delete(hash, plate);
         }
         threadSleep(100);
         // pthread_mutex_unlock(&hashMutex);
     }
-    free(balls);
+    free(plate);
     notFull++;
     return 0;
 }
